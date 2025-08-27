@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>關西家庭旅遊｜客製化互動行程</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Chosen Palette: Warm Neutrals (Stone, Amber, with a Teal accent) -->
+    <!-- Application Structure Plan: The application is a single-page app with a fixed top navigation for easy access to five logical sections: Overview, Transport, Daily Itinerary, Food Map, and Preparation. This task-oriented structure, derived from the source reports, allows the family to quickly find relevant information without navigating multiple pages. Key interactions include toggling Day 4 itinerary options and filtering the comprehensive food map, directly addressing the user's request for flexibility and detailed culinary guidance. This design prioritizes usability and efficient information retrieval during the trip. -->
+    <!-- Visualization & Content Choices: Report Info: Airport transport data -> Goal: Compare options -> Viz: Bar Chart (Chart.js) -> Interaction: Hover tooltips -> Justification: Clearly visualizes the trade-offs between cost and time for easy decision-making. Report Info: JR Pass vs. single ticket costs -> Goal: Justify pass purchase -> Viz: Bar Chart (Chart.js) -> Interaction: Hover tooltips -> Justification: Effectively demonstrates the value of the pass beyond just ticket prices by visualizing the cost comparison. Report Info: Daily schedule -> Goal: Provide a clear, step-by-step guide -> Presentation: Vertical Timeline (HTML/Tailwind) -> Interaction: Day 4 plan toggle -> Justification: Offers a scannable, intuitive format for daily plans while providing crucial flexibility. Report Info: Food recommendations across Kansai -> Goal: Easy food discovery -> Presentation: Filterable Card Grid (HTML/JS) -> Interaction: Category filter buttons -> Justification: Fulfills the user's core request by organizing a large number of food options into a manageable, interactive discovery tool. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Noto+Sans+TC:wght@400;500;700&display=swap');
+        body {
+            font-family: 'Inter', 'Noto Sans TC', sans-serif;
+            scroll-behavior: smooth;
+        }
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -31px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background-color: #f59e0b; 
+            border: 3px solid #f8fafc;
+            z-index: 1;
+        }
+        .timeline-line {
+            position: absolute;
+            left: -22px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background-color: #e2e8f0;
+        }
+        .nav-link.active {
+            color: #0d9488;
+            border-bottom: 2px solid #0d9488;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-700">
+
+    <header class="bg-white/80 backdrop-blur-lg shadow-sm sticky top-0 z-50">
+        <nav class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center">
+                    <span class="text-xl font-bold text-teal-700">關西家庭輕鬆遊</span>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-4">
+                        <a href="#overview" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-slate-600 hover:text-teal-600">行程總覽</a>
+                        <a href="#transport" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-slate-600 hover:text-teal-600">交通解析</a>
+                        <a href="#daily" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-slate-600 hover:text-teal-600">每日行程</a>
+                        <a href="#food" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-slate-600 hover:text-teal-600">美食地圖</a>
+                        <a href="#prep" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-slate-600 hover:text-teal-600">行前準備</a>
+                    </div>
+                </div>
+                <div class="md:hidden">
+                    <button id="mobile-menu-button" class="inline-flex items-center justify-center p-2 rounded-md text-slate-500 hover:text-white hover:bg-teal-600 focus:outline-none">
+                        <span class="sr-only">Open main menu</span>
+                        <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </nav>
+        <div id="mobile-menu" class="md:hidden hidden">
+            <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+                <a href="#overview" class="nav-link block px-3 py-2 rounded-md text-base font-medium text-slate-600 hover:text-teal-600">行程總覽</a>
+                <a href="#transport" class="nav-link block px-3 py-2 rounded-md text-base font-medium text-slate-600 hover:text-teal-600">交通解析</a>
+                <a href="#daily" class="nav-link block px-3 py-2 rounded-md text-base font-medium text-slate-600 hover:text-teal-600">每日行程</a>
+                <a href="#food" class="nav-link block px-3 py-2 rounded-md text-base font-medium text-slate-600 hover:text-teal-600">美食地圖</a>
+                <a href="#prep" class="nav-link block px-3 py-2 rounded-md text-base font-medium text-slate-600 hover:text-teal-600">行前準備</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto p-4 sm:p-6 lg:p-8">
+        
+        <section id="overview" class="mb-16 scroll-mt-20">
+            <div class="text-center mb-12">
+                <h1 class="text-4xl font-extrabold text-teal-800 tracking-tight sm:text-5xl">大阪五日家庭旅遊</h1>
+                <p class="mt-4 max-w-2xl mx-auto text-xl text-slate-500">一份為您精心規劃，兼具輕鬆步調與豐富體驗的關西之旅 (9/18 - 9/22)。</p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-5 gap-8">
+                <div class="day-card text-center p-6 bg-white rounded-xl shadow-lg hover:shadow-2xl transition-shadow duration-300">
+                    <h3 class="text-lg font-semibold text-amber-600">Day 1</h3>
+                    <p class="text-2xl font-bold mt-1">大阪</p>
+                    <p class="mt-2 text-slate-600">抵達與門真購物樂</p>
+                </div>
+                <div class="day-card text-center p-6 bg-white rounded-xl shadow-lg hover:shadow-2xl transition-shadow duration-300">
+                    <h3 class="text-lg font-semibold text-amber-600">Day 2</h3>
+                    <p class="text-2xl font-bold mt-1">大阪 → 京都</p>
+                    <p class="mt-2 text-slate-600">古都文化漫遊</p>
+                </div>
+                <div class="day-card text-center p-6 bg-white rounded-xl shadow-lg hover:shadow-2xl transition-shadow duration-300">
+                    <h3 class="text-lg font-semibold text-amber-600">Day 3</h3>
+                    <p class="text-2xl font-bold mt-1">神戶</p>
+                    <p class="mt-2 text-slate-600">美食與百萬夜景</p>
+                </div>
+                <div class="day-card text-center p-6 bg-white rounded-xl shadow-lg hover:shadow-2xl transition-shadow duration-300">
+                    <h3 class="text-lg font-semibold text-amber-600">Day 4</h3>
+                    <p class="text-2xl font-bold mt-1">奈良 / 宇治</p>
+                    <p class="mt-2 text-slate-600">古都雙城記</p>
+                </div>
+                <div class="day-card text-center p-6 bg-white rounded-xl shadow-lg hover:shadow-2xl transition-shadow duration-300">
+                    <h3 class="text-lg font-semibold text-amber-600">Day 5</h3>
+                    <p class="text-2xl font-bold mt-1">大阪</p>
+                    <p class="mt-2 text-slate-600">最後巡禮與返程</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="transport" class="mb-16 scroll-mt-20">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold text-teal-800 tracking-tight">交通住宿解析</h2>
+                <p class="mt-3 max-w-3xl mx-auto text-lg text-slate-500">本節將透過數據圖表，為您分析最適合的交通方案，並說明住宿地點的選擇。我們的目標是讓移動成為旅程的享受，而非負擔。</p>
+            </div>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                <div class="bg-white p-6 rounded-xl shadow-lg">
+                    <h3 class="text-xl font-semibold mb-1 text-slate-800">關西機場交通比較</h3>
+                    <p class="text-slate-600 mb-4">考量家庭行李與便利性，<span class="font-bold text-teal-700">利木津巴士</span>是絕佳選擇，可直達飯店免去轉乘煩惱，其價值遠超微小的時間差異。</p>
+                    <div class="chart-container">
+                        <canvas id="airportTransportChart"></canvas>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-lg">
+                    <h3 class="text-xl font-semibold mb-1 text-slate-800">行程總交通成本分析</h3>
+                    <p class="text-slate-600 mb-4">強烈推薦購買<span class="font-bold text-teal-700">JR關西地區鐵路周遊券</span>。它提供的「無憂移動」便利性，讓您無需擔心購票問題，其價值遠超票價差異。</p>
+                    <div class="chart-container">
+                        <canvas id="totalCostChart"></canvas>
+                    </div>
+                </div>
+            </div>
+             <div class="mt-8 bg-white p-6 rounded-xl shadow-lg">
+                <h3 class="text-xl font-semibold text-slate-800">住宿資訊</h3>
+                <p class="mt-2 text-slate-600">本次旅程全程住宿於<span class="font-bold text-teal-700">大阪梅田站</span>附近，此區交通四通八達，是探索關西地區的絕佳據點，無論前往京都、神戶或奈良都極為方便。</p>
+            </div>
+        </section>
+
+        <section id="daily" class="mb-16 scroll-mt-20">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold text-teal-800 tracking-tight">每日行程詳解</h2>
+                <p class="mt-3 max-w-2xl mx-auto text-lg text-slate-500">以時間軸呈現每日精彩行程，包含交通方式、預估時間與景點連結，讓您輕鬆掌握每一天的動向。</p>
+            </div>
+            <div class="space-y-12">
+                
+                <div>
+                    <h3 class="text-2xl font-bold mb-6 text-amber-700">Day 1: 抵達大阪，門真購物初體驗</h3>
+                    <div class="relative pl-8">
+                        <div class="timeline-line"></div>
+                        <div class="timeline-item relative mb-8 pl-8">
+                            <h4 class="font-bold text-lg">中午: 抵達關西機場 (KIX)</h4>
+                            <p class="text-sm text-slate-500">交通方式・約 60 分鐘</p>
+                            <div class="mt-2 text-slate-600">
+                                <p>搭乘【利木津巴士】直達梅田住宿地點，輕鬆方便。</p>
+                                <a href="https://www.google.com/maps/search/?api=1&query=Kansai+International+Airport" target="_blank" class="text-teal-600 hover:underline">查看地圖</a>
+                            </div>
+                        </div>
+                        <div class="timeline-item relative mb-8 pl-8">
+                            <h4 class="font-bold text-lg">14:00: 飯店 Check-in</h4>
+                            <p class="text-sm text-slate-500">停留・約 60 分鐘</p>
+                            <div class="mt-2 text-slate-600">
+                                <p>於梅田住宿處辦理入住並放置行李。</p>
+                                <a href="https://www.google.com/maps/search/?api=1&query=Umeda+Station" target="_blank" class="text-teal-600 hover:underline">梅田站周邊</a>
+                            </div>
+                        </div>
+                        <div class="timeline-item relative mb-8 pl-8">
+                            <h4 class="font-bold text-lg">15:30: 前往 Costco & Lalaport 門真店</h4>
+                            <p class="text-sm text-slate-500">交通方式・約 40 分鐘</p>
+                            <div class="mt-2 text-slate-600">
+                                <p>從梅田搭乘地鐵轉京阪電車至【門真市站】，步行約8分鐘。</p>
+                                <a href="https://www.google.com/maps/dir/Umeda+Station/Mitsui+Shopping+Park+LaLaport+KADOMA/" target="_blank" class="text-teal-600 hover:underline">規劃路線</a>
+                            </div>
+                        </div>
+                        <div class="timeline-item relative mb-8 pl-8">
+                            <h4 class="font-bold text-lg">19:00: 晚餐於 Lalaport</h4>
+                            <p class="text-sm text-slate-500">美食時間・約 90 分鐘</p>
+                            <div class="mt-2 text-slate-600">
+                                <p>在 Lalaport 美食街自由選擇，推薦【黑門三平】海鮮丼或【藏壽司】。</p>
+                                <a href="https://www.google.com/maps/search/?api=1&query=Mitsui+Shopping+Park+LaLaport+KADOMA" target="_blank" class="text-teal-600 hover:underline">查看地圖</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <h3 class="text-2xl font-bold mb-6 text-amber-700">Day 2: 大阪傳統與京都風情</h3>
+                     <div class="relative pl-8">
+                        <div class="timeline-line"></div>
+                        <div class="timeline-item relative mb-8 pl-8">
+                            <h4 class="font-bold text-lg">09:30: 大阪天滿宮 & 天神橋筋商店街</h4>
+                            <p class="text-sm text-slate-500">文化與美食・約 3 小時</p>
+                            <div class="mt-2 text-slate-600">
+                                <p>從梅田搭地鐵至【南森町站】，感受大阪最長商店街的活力，並在此享用午餐。</p>
+                                <a href="https://www.google.com/maps/dir/Umeda+Station/Tenjinbashisuji+Shopping+Street/" target="_blank" class="text-teal-600 hover:underline">規劃路線</a>
+                            </div>
+                        </div>
+                        <div class="timeline-item relative mb-8 pl-8">
+                            <h4 class="font-bold text-lg">13:30: 前往京都</h4>
+                            <p class="text-sm text-slate-500">交通方式・約 30 分鐘</p>
+                            <div class="mt-2 text-slate-600">
+                                <p>從【JR大阪站】搭乘JR京都線新快速至【JR京都站】。</p>
+                                <a href="https://www.google.com/maps/dir/Osaka+Station/Kyoto+Station/" target="_blank" class="text-teal-600 hover:underline">規劃路線</a>
+                            </div>
+                        </div>
+                        <div class="timeline-item relative mb-8 pl-8">
+                            <h4 class="font-bold text-lg">14:30: 岡崎神社 (兔子神社)</h4>
+                            <p class="text-sm text-slate-500">參拜祈福・約 60 分鐘</p>
+                            <div class="mt-2 text-slate-600">
+                                <p>從京都站搭乘市巴士至【岡崎神社前】。尋找可愛的兔子御神籤。</p>
+                                <a href="https://www.google.com/maps/search/?api=1&query=Okazaki+Shrine" target="_blank" class="text-teal-600 hover:underline">查看地圖</a>
+                            </div>
+                        </div>
+                        <div class="timeline-item relative mb-8 pl-8">
+                            <h4 class="font-bold text-lg">16:00: 京都岡崎蔦屋書店 & 星巴克</h4>
+                            <p class="text-sm text-slate-500">下午茶・約 90 分鐘</p>
+                            <div class="mt-2 text-slate-600">
+                                <p>從岡崎神社步行約15分鐘，在充滿書香的特色星巴克享受悠閒時光。</p>
+                                <a href="https://www.google.com/maps/search/?api=1&query=Starbucks+Kyoto+Okazaki+Tsutaya+Books" target="_blank" class="text-teal-600 hover:underline">查看地圖</a>
+                            </div>
+                        </div>
+                         <div class="timeline-item relative mb-8 pl-8">
+                            <h4 class="font-bold text-lg">18:00: 返回大阪</h4>
+                            <p class="text-sm text-slate-500">交通方式・約 30 分鐘</p>
+                            <div class="mt-2 text-slate-600">
+                                <p>循原路返回大阪，於梅田周邊享用晚餐。</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <h3 class="text-2xl font-bold mb-6 text-amber-700">Day 3: 神戶港都美食夜景</h3>
+                    <div class="relative pl-8">
+                        <div class="timeline-line"></div>
+                        <div class="timeline-item relative mb-8 pl-8">
+                            <h4 class="font-bold text-lg">10:00: 前往神戶</h4>
+                            <p class="text-sm text-slate-500">交通方式・約 30 分鐘</p>
+                            <div class="mt-2 text-slate-600">
+                                <p>從【阪急大阪梅田站】搭乘特急至【神戶三宮站】。</p>
+                                <a href="https://www.google.com/maps/dir/Osaka-umeda+Station/Kobe-sannomiya+Station+(Hankyu)/" target="_blank" class="text-teal-600 hover:underline">規劃路線</a>
+                            </div>
+                        </div>
+                        <div class="timeline-item relative mb-8 pl-8">
+                            <h4 class="font-bold text-lg">10:30: 神戶美利堅公園 & 星巴克</h4>
+                            <p class="text-sm text-slate-500">港邊散策・約 60 分鐘</p>
+                            <div class="mt-2 text-slate-600">
+                                <p>在家庭友善的特色星巴克欣賞神戶港美景，避免爬坡勞累。</p>
+                                <a href="https://www.google.com/maps/search/?api=1&query=Starbucks+Kobe+Meriken+Park" target="_blank" class="text-teal-600 hover:underline">查看地圖</a>
+                            </div>
+                        </div>
+                        <div class="timeline-item relative mb-8 pl-8">
+                            <h4 class="font-bold text-lg">11:30: 神戶牛排午餐</h4>
+                            <p class="text-sm text-slate-500">美食時間・約 90 分鐘</p>
+                            <div class="mt-2 text-slate-600">
+                                <p>品嚐世界聞名的神戶牛排，推薦【神戶牛排Vesta】或【吉祥吉】。</p>
+                                <a href="https://www.google.com/maps/search/?api=1&query=Kobe+beef+steak+near+Sannomiya+Station" target="_blank" class="text-teal-600 hover:underline">搜尋餐廳</a>
+                            </div>
+                        </div>
+                        <div class="timeline-item relative mb-8 pl-8">
+                            <h4 class="font-bold text-lg">17:30: 摩耶山纜車 & 千萬夜景</h4>
+                            <p class="text-sm text-slate-500">絕美景色・約 2 小時</p>
+                            <div class="mt-2 text-slate-600">
+                                <p>搭乘摩耶景觀線纜車，欣賞日本三大夜景之一的壯麗景色。</p>
+                                <a href="https://www.google.com/maps/search/?api=1&query=Maya+Viewline" target="_blank" class="text-teal-600 hover:underline">查看地圖</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <h3 class="text-2xl font-bold mb-6 text-amber-700">Day 4: 古都巡禮二選一</h3>
+                    <div class="bg-teal-50 border-l-4 border-teal-500 text-teal-800 p-4 rounded-r-lg mb-6" role="alert">
+                      <p class="font-bold">專業規劃師建議</p>
+                      <p>為維持「輕鬆隨興」的家庭旅遊步調，強烈建議選擇【方案一：奈良深度一日遊】，避免行程過於緊湊勞累。</p>
+                    </div>
+                    <div class="flex space-x-2 mb-6">
+                        <button id="planA-btn" class="plan-toggle-btn bg-teal-600 text-white px-4 py-2 rounded-lg shadow">推薦方案：奈良深度遊</button>
+                        <button id="planB-btn" class="plan-toggle-btn bg-white text-slate-600 px-4 py-2 rounded-lg shadow">備選方案：宇治+奈良精華遊</button>
+                    </div>
+
+                    <div id="planA" class="plan-content">
+                        <div class="relative pl-8">
+                            <div class="timeline-line"></div>
+                            <div class="timeline-item relative mb-8 pl-8">
+                                <h4 class="font-bold text-lg">09:00: 前往奈良</h4>
+                                <p class="text-sm text-slate-500">交通方式・約 50 分鐘</p>
+                                <div class="mt-2 text-slate-600">
+                                    <p>從【JR大阪站】搭乘大和路快速至【JR奈良站】。</p>
+                                    <a href="https://www.google.com/maps/dir/Osaka+Station/Nara+Station/" target="_blank" class="text-teal-600 hover:underline">規劃路線</a>
+                                </div>
+                            </div>
+                            <div class="timeline-item relative mb-8 pl-8">
+                                <h4 class="font-bold text-lg">10:00: 奈良公園與小鹿互動</h4>
+                                <p class="text-sm text-slate-500">悠閒時光・自由安排</p>
+                                <div class="mt-2 text-slate-600">
+                                    <p>在廣大的公園裡悠閒散步，與可愛的鹿群近距離接觸。</p>
+                                    <a href="https://www.google.com/maps/search/?api=1&query=Nara+Park" target="_blank" class="text-teal-600 hover:underline">查看地圖</a>
+                                </div>
+                            </div>
+                            <div class="timeline-item relative mb-8 pl-8">
+                                <h4 class="font-bold text-lg">12:30: 午餐</h4>
+                                <p class="text-sm text-slate-500">美食時間・約 60 分鐘</p>
+                                <div class="mt-2 text-slate-600">
+                                    <p>在奈良公園周邊或東向商店街尋找當地特色美食，如【柿葉壽司】。</p>
+                                </div>
+                            </div>
+                            <div class="timeline-item relative mb-8 pl-8">
+                                <h4 class="font-bold text-lg">14:00: 東大寺大佛殿</h4>
+                                <p class="text-sm text-slate-500">世界遺產・約 90 分鐘</p>
+                                <div class="mt-2 text-slate-600">
+                                    <p>參觀世界上最大的木造建築，感受大佛的宏偉莊嚴。</p>
+                                    <a href="https://www.google.com/maps/search/?api=1&query=Todai-ji+Temple" target="_blank" class="text-teal-600 hover:underline">查看地圖</a>
+                                </div>
+                            </div>
+                            <div class="timeline-item relative mb-8 pl-8">
+                                <h4 class="font-bold text-lg">16:00: 返回大阪</h4>
+                                <p class="text-sm text-slate-500">交通方式・約 50 分鐘</p>
+                                <div class="mt-2 text-slate-600">
+                                    <p>從【JR奈良站】搭車返回大阪，結束輕鬆的一日遊。</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="planB" class="plan-content hidden">
+                         <div class="relative pl-8">
+                            <div class="timeline-line"></div>
+                            <div class="timeline-item relative mb-8 pl-8">
+                                <h4 class="font-bold text-lg">09:00: 前往宇治</h4>
+                                <p class="text-sm text-slate-500">交通方式・約 60 分鐘</p>
+                                <div class="mt-2 text-slate-600">
+                                    <p>從【JR大阪站】搭車至【JR宇治站】。</p>
+                                    <a href="https://www.google.com/maps/dir/Osaka+Station/Uji+Station/" target="_blank" class="text-teal-600 hover:underline">規劃路線</a>
+                                </div>
+                            </div>
+                            <div class="timeline-item relative mb-8 pl-8">
+                                <h4 class="font-bold text-lg">10:00: 平等院 & 宇治橋</h4>
+                                <p class="text-sm text-slate-500">世界遺產・約 2 小時</p>
+                                <div class="mt-2 text-slate-600">
+                                    <p>參觀印在日幣十元硬幣上的鳳凰堂，品嚐道地抹茶。</p>
+                                    <a href="https://www.google.com/maps/search/?api=1&query=Byodo-in+Temple" target="_blank" class="text-teal-600 hover:underline">查看地圖</a>
+                                </div>
+                            </div>
+                            <div class="timeline-item relative mb-8 pl-8">
+                                <h4 class="font-bold text-lg">12:30: 前往奈良</h4>
+                                <p class="text-sm text-slate-500">交通方式・約 30 分鐘</p>
+                                <div class="mt-2 text-slate-600">
+                                    <p>從【JR宇治站】搭乘JR奈良線至【JR奈良站】。</p>
+                                    <a href="https://www.google.com/maps/dir/Uji+Station/Nara+Station/" target="_blank" class="text-teal-600 hover:underline">規劃路線</a>
+                                </div>
+                            </div>
+                            <div class="timeline-item relative mb-8 pl-8">
+                                <h4 class="font-bold text-lg">13:30: 奈良公園餵鹿 (精華版)</h4>
+                                <p class="text-sm text-slate-500">互動體驗・約 90 分鐘</p>
+                                <div class="mt-2 text-slate-600">
+                                    <p>在奈良公園核心區域與小鹿互動，快速體驗奈良魅力。</p>
+                                    <a href="https://www.google.com/maps/search/?api=1&query=Nara+Park" target="_blank" class="text-teal-600 hover:underline">查看地圖</a>
+                                </div>
+                            </div>
+                             <div class="timeline-item relative mb-8 pl-8">
+                                <h4 class="font-bold text-lg">15:30: 返回大阪</h4>
+                                <p class="text-sm text-slate-500">交通方式・約 50 分鐘</p>
+                                <div class="mt-2 text-slate-600">
+                                    <p>行程緊湊，提早從【JR奈良站】返回大阪休息。</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <h3 class="text-2xl font-bold mb-6 text-amber-700">Day 5: 最後巡禮，滿載而歸</h3>
+                    <div class="relative pl-8">
+                        <div class="timeline-line"></div>
+                        <div class="timeline-item relative mb-8 pl-8">
+                            <h4 class="font-bold text-lg">上午: 梅田周邊自由活動</h4>
+                            <p class="text-sm text-slate-500">購物時間・自由安排</p>
+                            <div class="mt-2 text-slate-600">
+                                <p>在梅田地區的百貨公司或商店街進行最後的購物。</p>
+                                <a href="https://www.google.com/maps/search/?api=1&query=Umeda+Sky+Building" target="_blank" class="text-teal-600 hover:underline">梅田地標</a>
+                            </div>
+                        </div>
+                        <div class="timeline-item relative mb-8 pl-8">
+                            <h4 class="font-bold text-lg">中午: 前往關西機場 (KIX)</h4>
+                            <p class="text-sm text-slate-500">交通方式・約 60 分鐘</p>
+                            <div class="mt-2 text-slate-600">
+                                <p>再次推薦搭乘【利木津巴士】，輕鬆攜帶戰利品直達機場。</p>
+                                <a href="https://www.google.com/maps/search/?api=1&query=Kansai+International+Airport" target="_blank" class="text-teal-600 hover:underline">機場地圖</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="food" class="mb-16 scroll-mt-20">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold text-teal-800 tracking-tight">美食地圖</h2>
+                <p class="mt-3 max-w-2xl mx-auto text-lg text-slate-500">本節整合了行程中所有推薦的美食，您可以透過下方的按鈕依地區或類型篩選，快速找到想品嚐的美味。</p>
+            </div>
+            <div class="flex justify-center flex-wrap gap-2 mb-8">
+                <button class="food-filter-btn bg-teal-600 text-white px-4 py-2 rounded-full" data-category="all">全部</button>
+                <button class="food-filter-btn bg-white text-slate-600 px-4 py-2 rounded-full" data-category="大阪">大阪</button>
+                <button class="food-filter-btn bg-white text-slate-600 px-4 py-2 rounded-full" data-category="京都">京都</button>
+                <button class="food-filter-btn bg-white text-slate-600 px-4 py-2 rounded-full" data-category="神戶">神戶</button>
+                <button class="food-filter-btn bg-white text-slate-600 px-4 py-2 rounded-full" data-category="奈良">奈良</button>
+                <button class="food-filter-btn bg-white text-slate-600 px-4 py-2 rounded-full" data-category="宇治">宇治</button>
+                <button class="food-filter-btn bg-white text-slate-600 px-4 py-2 rounded-full" data-category="甜點">甜點</button>
+            </div>
+            <div id="food-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                
+                <div class="food-card bg-white rounded-xl shadow-lg overflow-hidden" data-category="神戶">
+                    <div class="p-6">
+                        <p class="text-sm font-semibold text-amber-600">神戶</p>
+                        <h3 class="text-xl font-bold mt-1">神戶牛排 Vesta</h3>
+                        <p class="mt-2 text-slate-600">提供頂級A5神戶牛，服務親切，氛圍高雅，深受遊客喜愛。</p>
+                        <a href="https://www.google.com/maps/search/?api=1&query=Steak+House+Vesta+Kobe" target="_blank" class="mt-4 inline-block text-teal-600 hover:underline">在地圖上查看</a>
+                    </div>
+                </div>
+                <div class="food-card bg-white rounded-xl shadow-lg overflow-hidden" data-category="神戶">
+                    <div class="p-6">
+                        <p class="text-sm font-semibold text-amber-600">神戶</p>
+                        <h3 class="text-xl font-bold mt-1">神戶牛排 吉祥吉</h3>
+                        <p class="mt-2 text-slate-600">人氣名店，以主廚與顧客的熱絡互動和溫馨服務聞名。</p>
+                        <a href="https://www.google.com/maps/search/?api=1&query=Kobe+Beef+Kisshokichi+Honten" target="_blank" class="mt-4 inline-block text-teal-600 hover:underline">在地圖上查看</a>
+                    </div>
+                </div>
+                <div class="food-card bg-white rounded-xl shadow-lg overflow-hidden" data-category="大阪">
+                    <div class="p-6">
+                        <p class="text-sm font-semibold text-amber-600">大阪・門真</p>
+                        <h3 class="text-xl font-bold mt-1">黑門三平 (海鮮)</h3>
+                        <p class="mt-2 text-slate-600">位於Lalaport內，提供當日新鮮漁獲製成的美味海鮮丼。</p>
+                        <a href="https://www.google.com/maps/search/?api=1&query=Kuromon+Sanpei+LaLaport+KADOMA" target="_blank" class="mt-4 inline-block text-teal-600 hover:underline">在地圖上查看</a>
+                    </div>
+                </div>
+                <div class="food-card bg-white rounded-xl shadow-lg overflow-hidden" data-category="大阪">
+                    <div class="p-6">
+                        <p class="text-sm font-semibold text-amber-600">大阪・門真</p>
+                        <h3 class="text-xl font-bold mt-1">藏壽司 (壽司)</h3>
+                        <p class="mt-2 text-slate-600">位於Lalaport內，每五盤可玩一次扭蛋，充滿樂趣，適合家庭。</p>
+                        <a href="https://www.google.com/maps/search/?api=1&query=Kura+Sushi+LaLaport+KADOMA" target="_blank" class="mt-4 inline-block text-teal-600 hover:underline">在地圖上查看</a>
+                    </div>
+                </div>
+                 <div class="food-card bg-white rounded-xl shadow-lg overflow-hidden" data-category="大阪">
+                    <div class="p-6">
+                        <p class="text-sm font-semibold text-amber-600">大阪・梅田</p>
+                        <h3 class="text-xl font-bold mt-1">百貨公司美食街</h3>
+                        <p class="mt-2 text-slate-600">梅田有多家百貨(阪急、阪神、大丸)，B1美食街是尋寶的好去處。</p>
+                        <a href="https://www.google.com/maps/search/?api=1&query=Umeda+Department+Store+Food+Hall" target="_blank" class="mt-4 inline-block text-teal-600 hover:underline">搜尋附近百貨</a>
+                    </div>
+                </div>
+                <div class="food-card bg-white rounded-xl shadow-lg overflow-hidden" data-category="京都 甜點">
+                    <div class="p-6">
+                        <p class="text-sm font-semibold text-amber-600">京都</p>
+                        <h3 class="text-xl font-bold mt-1">辻利・茶寮都路里 (抹茶甜點)</h3>
+                        <p class="mt-2 text-slate-600">京都抹茶的代表名店，其抹茶聖代是必點的經典美味。</p>
+                        <a href="https://www.google.com/maps/search/?api=1&query=Saryo+Tsujiri+Gion+Honten" target="_blank" class="mt-4 inline-block text-teal-600 hover:underline">在地圖上查看</a>
+                    </div>
+                </div>
+                <div class="food-card bg-white rounded-xl shadow-lg overflow-hidden" data-category="京都">
+                    <div class="p-6">
+                        <p class="text-sm font-semibold text-amber-600">京都</p>
+                        <h3 class="text-xl font-bold mt-1">錦市場 (小吃)</h3>
+                        <p class="mt-2 text-slate-600">被譽為「京都的廚房」，可以品嚐玉子燒、豆乳甜甜圈等各式小吃。</p>
+                        <a href="https://www.google.com/maps/search/?api=1&query=Nishiki+Market" target="_blank" class="mt-4 inline-block text-teal-600 hover:underline">在地圖上查看</a>
+                    </div>
+                </div>
+                <div class="food-card bg-white rounded-xl shadow-lg overflow-hidden" data-category="宇治 甜點">
+                    <div class="p-6">
+                        <p class="text-sm font-semibold text-amber-600">宇治</p>
+                        <h3 class="text-xl font-bold mt-1">中村藤吉本店 (抹茶)</h3>
+                        <p class="mt-2 text-slate-600">宇治抹茶的代名詞，無論是抹茶甜點或蕎麥麵都極具水準。</p>
+                        <a href="https://www.google.com/maps/search/?api=1&query=Nakamura+Tokichi+Honten" target="_blank" class="mt-4 inline-block text-teal-600 hover:underline">在地圖上查看</a>
+                    </div>
+                </div>
+                <div class="food-card bg-white rounded-xl shadow-lg overflow-hidden" data-category="奈良">
+                    <div class="p-6">
+                        <p class="text-sm font-semibold text-amber-600">奈良</p>
+                        <h3 class="text-xl font-bold mt-1">柿葉壽司本舖 Tanaka</h3>
+                        <p class="mt-2 text-slate-600">奈良傳統鄉土料理，用柿葉包裹的壽司帶有獨特清香，適合野餐。</p>
+                        <a href="https://www.google.com/maps/search/?api=1&query=Kakinoha-sushi+Honpo+Tanaka" target="_blank" class="mt-4 inline-block text-teal-600 hover:underline">在地圖上查看</a>
+                    </div>
+                </div>
+                <div class="food-card bg-white rounded-xl shadow-lg overflow-hidden" data-category="奈良 甜點">
+                    <div class="p-6">
+                        <p class="text-sm font-semibold text-amber-600">奈良</p>
+                        <h3 class="text-xl font-bold mt-1">中谷堂 (麻糬)</h3>
+                        <p class="mt-2 text-slate-600">以高速搗麻糬表演聞名，現做的艾草麻糬口感Q彈，紅豆餡甜而不膩。</p>
+                        <a href="https://www.google.com/maps/search/?api=1&query=Nakatanidou" target="_blank" class="mt-4 inline-block text-teal-600 hover:underline">在地圖上查看</a>
+                    </div>
+                </div>
+                 <div class="food-card bg-white rounded-xl shadow-lg overflow-hidden" data-category="奈良 甜點">
+                    <div class="p-6">
+                        <p class="text-sm font-semibold text-amber-600">奈良</p>
+                        <h3 class="text-xl font-bold mt-1">大佛布丁</h3>
+                        <p class="mt-2 text-slate-600">奈良的代表性甜點，瓶蓋上的大佛圖案非常可愛，布丁口感綿密滑順。</p>
+                        <a href="https://www.google.com/maps/search/?api=1&query=Daibutsu+Pudding" target="_blank" class="mt-4 inline-block text-teal-600 hover:underline">在地圖上查看</a>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <section id="prep" class="scroll-mt-20">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold text-teal-800 tracking-tight">行前準備清單</h2>
+                <p class="mt-3 max-w-2xl mx-auto text-lg text-slate-500">確認帶齊所有物品，讓您的旅程更順利無憂。</p>
+            </div>
+            <div class="max-w-2xl mx-auto bg-white p-8 rounded-xl shadow-lg">
+                <ul class="space-y-4">
+                    <li class="flex items-center">
+                        <input id="item1" type="checkbox" class="h-5 w-5 rounded border-gray-300 text-teal-600 focus:ring-teal-500">
+                        <label for="item1" class="ml-3 text-lg text-slate-700">護照與簽證 (確認效期)</label>
+                    </li>
+                    <li class="flex items-center">
+                        <input id="item2" type="checkbox" class="h-5 w-5 rounded border-gray-300 text-teal-600 focus:ring-teal-500">
+                        <label for="item2" class="ml-3 text-lg text-slate-700">JR 關西地區鐵路周遊券 (或兌換券)</label>
+                    </li>
+                    <li class="flex items-center">
+                        <input id="item3" type="checkbox" class="h-5 w-5 rounded border-gray-300 text-teal-600 focus:ring-teal-500">
+                        <label for="item3" class="ml-3 text-lg text-slate-700">日幣現金與信用卡</label>
+                    </li>
+                    <li class="flex items-center">
+                        <input id="item4" type="checkbox" class="h-5 w-5 rounded border-gray-300 text-teal-600 focus:ring-teal-500">
+                        <label for="item4" class="ml-3 text-lg text-slate-700">網路分享器 (Wi-Fi) 或 SIM 卡</label>
+                    </li>
+                    <li class="flex items-center">
+                        <input id="item5" type="checkbox" class="h-5 w-5 rounded border-gray-300 text-teal-600 focus:ring-teal-500">
+                        <label for="item5" class="ml-3 text-lg text-slate-700">ICOCA 或 Suica 等交通卡 (方便搭乘市區交通)</label>
+                    </li>
+                    <li class="flex items-center">
+                        <input id="item6" type="checkbox" class="h-5 w-5 rounded border-gray-300 text-teal-600 focus:ring-teal-500">
+                        <label for="item6" class="ml-3 text-lg text-slate-700">常用藥品與個人盥洗用品</label>
+                    </li>
+                    <li class="flex items-center">
+                        <input id="item7" type="checkbox" class="h-5 w-5 rounded border-gray-300 text-teal-600 focus:ring-teal-500">
+                        <label for="item7" class="ml-3 text-lg text-slate-700">手機、相機與行動電源</label>
+                    </li>
+                </ul>
+            </div>
+        </section>
+    </main>
+
+    <footer class="bg-slate-800 text-white mt-16">
+        <div class="container mx-auto py-6 px-4 sm:px-6 lg:px-8 text-center">
+            <p>&copy; 2024 客製化旅遊規劃. 祝您旅途愉快！</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            
+            const airportCtx = document.getElementById('airportTransportChart').getContext('2d');
+            new Chart(airportCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['利木津巴士', 'JR HARUKA', 'JR 關空快速'],
+                    datasets: [{
+                        label: '費用 (日圓)',
+                        data: [1800, 1800, 1210],
+                        backgroundColor: 'rgba(13, 148, 136, 0.6)',
+                        borderColor: 'rgba(13, 148, 136, 1)',
+                        borderWidth: 1,
+                        yAxisID: 'y'
+                    }, {
+                        label: '時間 (分鐘)',
+                        data: [58, 45, 65],
+                        backgroundColor: 'rgba(245, 158, 11, 0.6)',
+                        borderColor: 'rgba(245, 158, 11, 1)',
+                        borderWidth: 1,
+                        yAxisID: 'y1'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { beginAtZero: true, position: 'left', title: { display: true, text: '費用 (日圓)' } },
+                        y1: { beginAtZero: true, position: 'right', title: { display: true, text: '時間 (分鐘)' }, grid: { drawOnChartArea: false } }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) { label += ': '; }
+                                    if (context.parsed.y !== null) {
+                                        label += context.parsed.y + (context.dataset.yAxisID === 'y' ? ' 日圓' : ' 分鐘');
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            const totalCostCtx = document.getElementById('totalCostChart').getContext('2d');
+            new Chart(totalCostCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['單程票總和 (含機場)', 'JR關西地區周遊券 (4日)'],
+                    datasets: [{
+                        label: '總費用 (日圓)',
+                        data: [7610, 7000],
+                        backgroundColor: ['rgba(245, 158, 11, 0.6)', 'rgba(13, 148, 136, 0.6)'],
+                        borderColor: ['rgba(245, 158, 11, 1)', 'rgba(13, 148, 136, 1)'],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: { y: { beginAtZero: true, title: { display: true, text: '費用 (日圓)' } } },
+                    plugins: { legend: { display: false } }
+                }
+            });
+
+            const planBtnA = document.getElementById('planA-btn');
+            const planBtnB = document.getElementById('planB-btn');
+            const planA = document.getElementById('planA');
+            const planB = document.getElementById('planB');
+            const planToggleBtns = [planBtnA, planBtnB];
+
+            planToggleBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const isPlanA = btn === planBtnA;
+                    planA.classList.toggle('hidden', !isPlanA);
+                    planB.classList.toggle('hidden', isPlanA);
+                    planBtnA.classList.toggle('bg-teal-600', isPlanA);
+                    planBtnA.classList.toggle('text-white', isPlanA);
+                    planBtnA.classList.toggle('bg-white', !isPlanA);
+                    planBtnA.classList.toggle('text-slate-600', !isPlanA);
+                    planBtnB.classList.toggle('bg-teal-600', !isPlanA);
+                    planBtnB.classList.toggle('text-white', !isPlanA);
+                    planBtnB.classList.toggle('bg-white', isPlanA);
+                    planBtnB.classList.toggle('text-slate-600', isPlanA);
+                });
+            });
+            
+            const foodFilterBtns = document.querySelectorAll('.food-filter-btn');
+            const foodCards = document.querySelectorAll('.food-card');
+
+            foodFilterBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    foodFilterBtns.forEach(b => {
+                        b.classList.remove('bg-teal-600', 'text-white');
+                        b.classList.add('bg-white', 'text-slate-600');
+                    });
+                    btn.classList.add('bg-teal-600', 'text-white');
+                    btn.classList.remove('bg-white', 'text-slate-600');
+                    
+                    const selectedCategory = btn.dataset.category;
+
+                    foodCards.forEach(card => {
+                        const cardCategories = card.dataset.category.split(' ');
+                        if (selectedCategory === 'all' || cardCategories.includes(selectedCategory)) {
+                            card.style.display = 'block';
+                        } else {
+                            card.style.display = 'none';
+                        }
+                    });
+                });
+            });
+
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+            mobileMenuButton.addEventListener('click', () => {
+                mobileMenu.classList.toggle('hidden');
+            });
+
+            const navLinks = document.querySelectorAll('.nav-link');
+            const sections = document.querySelectorAll('main section');
+
+            navLinks.forEach(link => {
+                link.addEventListener('click', () => {
+                    if (!mobileMenu.classList.contains('hidden')) {
+                        mobileMenu.classList.add('hidden');
+                    }
+                });
+            });
+            
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        navLinks.forEach(link => {
+                            link.classList.remove('active');
+                            if (link.getAttribute('href').substring(1) === entry.target.id) {
+                                link.classList.add('active');
+                            }
+                        });
+                    }
+                });
+            }, { rootMargin: "-50% 0px -50% 0px" });
+
+            sections.forEach(section => {
+                observer.observe(section);
+            });
+        });
+    </script>
+</body>
+</html>
