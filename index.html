@@ -7,8 +7,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Chosen Palette: Warm Neutrals (Stone, Amber, with a Teal accent) -->
-    <!-- Application Structure Plan: The application is a single-page app with a fixed top navigation for easy access to five logical sections: Overview, Transport, Daily Itinerary, Food Map, and Preparation. This task-oriented structure, derived from the source reports, allows the family to quickly find relevant information without navigating multiple pages. Key interactions include toggling Day 4 itinerary options and filtering the comprehensive food map, directly addressing the user's request for flexibility and detailed culinary guidance. This design prioritizes usability and efficient information retrieval during the trip. -->
-    <!-- Visualization & Content Choices: Report Info: Airport transport data -> Goal: Compare options -> Viz: Bar Chart (Chart.js) -> Interaction: Hover tooltips -> Justification: Clearly visualizes the trade-offs between cost and time, promoting JR HARUKA for its speed and its seamless connection with the JR Pass. Report Info: JR Pass vs. single ticket costs -> Goal: Justify pass purchase -> Viz: Bar Chart (Chart.js) -> Interaction: Hover tooltips -> Justification: Effectively demonstrates the value of the pass beyond just ticket prices by visualizing the cost comparison. Report Info: Daily schedule -> Goal: Provide a clear, step-by-step guide -> Presentation: Vertical Timeline (HTML/Tailwind) -> Interaction: Day 4 plan toggle -> Justification: Offers a scannable, intuitive format for daily plans while providing crucial flexibility. Report Info: Food recommendations across Kansai -> Goal: Easy food discovery -> Presentation: Filterable Card Grid (HTML/JS) -> Interaction: Category filter buttons -> Justification: Fulfills the user's core request by organizing a large number of food options into a manageable, interactive discovery tool. -->
+    <!-- Application Structure Plan: The application is a single-page app with a fixed top navigation for easy access to five logical sections: Overview, Transport, Daily Itinerary, Food Map, and Preparation. This task-oriented structure, derived from the source report, allows the family to quickly find relevant information without navigating multiple pages. Key interactions include toggling Day 4 itinerary options and filtering the comprehensive food map, directly addressing the user's request for flexibility and detailed culinary guidance. This design prioritizes usability and efficient information retrieval during the trip. -->
+    <!-- Visualization & Content Choices: Report Info: Airport transport data -> Goal: Compare options -> Viz: Bar Chart (Chart.js) -> Interaction: Hover tooltips -> Justification: Clearly visualizes the trade-offs between cost and time for easy decision-making. Report Info: JR Pass vs. single ticket costs -> Goal: Justify pass purchase -> Viz: Bar Chart (Chart.js) -> Interaction: Hover tooltips -> Justification: Effectively demonstrates the value of the pass beyond just ticket prices by visualizing the cost comparison. Report Info: Daily schedule -> Goal: Provide a clear, step-by-step guide -> Presentation: Vertical Timeline (HTML/Tailwind) -> Interaction: Day 4 plan toggle -> Justification: Offers a scannable, intuitive format for daily plans while providing crucial flexibility. Report Info: Food recommendations across Kansai -> Goal: Easy food discovery -> Presentation: Filterable Card Grid (HTML/JS) -> Interaction: Category filter buttons -> Justification: Fulfills the user's core request by organizing a large number of food options into a manageable, interactive discovery tool. -->
     <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Noto+Sans+TC:wght@400;500;700&display=swap');
@@ -134,12 +134,12 @@
         <section id="transport" class="mb-16 scroll-mt-20">
             <div class="text-center mb-12">
                 <h2 class="text-3xl font-bold text-teal-800 tracking-tight">交通住宿解析</h2>
-                <p class="mt-3 max-w-3xl mx-auto text-lg text-slate-500">本節將透過數據圖表，為您分析最適合的交通方案，並說明住宿地點的選擇。考量到時間的寶貴，<span class="font-bold text-teal-700">JR HARUKA</span> 是您抵達後能最快前往市區的絕佳選擇，且與行程中的JR周遊券完美銜接。</p>
+                <p class="mt-3 max-w-3xl mx-auto text-lg text-slate-500">本節將透過數據圖表，為您分析最適合的交通方案，並說明住宿地點的選擇。我們的目標是讓移動成為旅程的享受，而非負擔。</p>
             </div>
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
                 <div class="bg-white p-6 rounded-xl shadow-lg">
                     <h3 class="text-xl font-semibold mb-1 text-slate-800">關西機場交通比較</h3>
-                    <p class="text-slate-600 mb-4">JR HARUKA 在時間上具備明顯優勢，能讓您在45分鐘內抵達天王寺或新大阪，是追求效率的最佳選擇。</p>
+                    <p class="text-slate-600 mb-4">考量家庭行李與便利性，<span class="font-bold text-teal-700">利木津巴士</span>是絕佳選擇，可直達飯店免去轉乘煩惱，其價值遠超微小的時間差異。</p>
                     <div class="chart-container">
                         <canvas id="airportTransportChart"></canvas>
                     </div>
@@ -166,14 +166,14 @@
             <div class="space-y-12">
                 
                 <div>
-                    <h3 class="text-2xl font-bold mb-6 text-amber-700">Day 1: 抵達大阪，門真購物初體驗</h3>
+                    <h3 class="text-2xl font-bold mb-6 text-amber-700">Day 1: 抵達與門真探險</h3>
                     <div class="relative pl-8">
                         <div class="timeline-line"></div>
                         <div class="timeline-item relative mb-8 pl-8">
                             <h4 class="font-bold text-lg">中午: 抵達關西機場 (KIX)</h4>
-                            <p class="text-sm text-slate-500">交通方式・約 45 分鐘</p>
+                            <p class="text-sm text-slate-500">交通方式・約 50-60 分鐘</p>
                             <div class="mt-2 text-slate-600">
-                                <p>搭乘【JR HARUKA】至天王寺或新大阪站，再轉乘地鐵前往梅田住宿地點。</p>
+                                <p>搭乘【利木津巴士】直達梅田住宿地點，輕鬆方便。</p>
                                 <a href="https://www.google.com/maps/search/?api=1&query=Kansai+International+Airport" target="_blank" class="text-teal-600 hover:underline">查看地圖</a>
                             </div>
                         </div>
@@ -205,27 +205,35 @@
                 </div>
 
                 <div>
-                    <h3 class="text-2xl font-bold mb-6 text-amber-700">Day 2: 大阪傳統與京都風情</h3>
+                    <h3 class="text-2xl font-bold mb-6 text-amber-700">Day 2: 大阪市區與京都古都巡禮</h3>
                      <div class="relative pl-8">
                         <div class="timeline-line"></div>
                         <div class="timeline-item relative mb-8 pl-8">
                             <h4 class="font-bold text-lg">09:30: 大阪天滿宮 & 天神橋筋商店街</h4>
-                            <p class="text-sm text-slate-500">文化與美食・約 3 小時</p>
+                            <p class="text-sm text-slate-500">文化與美食・約 2.5 小時</p>
                             <div class="mt-2 text-slate-600">
                                 <p>從梅田搭地鐵至【南森町站】，感受大阪最長商店街的活力，並在此享用午餐。</p>
                                 <a href="https://www.google.com/maps/dir/Umeda+Station/Tenjinbashisuji+Shopping+Street/" target="_blank" class="text-teal-600 hover:underline">規劃路線</a>
                             </div>
                         </div>
                         <div class="timeline-item relative mb-8 pl-8">
-                            <h4 class="font-bold text-lg">13:30: 前往京都</h4>
-                            <p class="text-sm text-slate-500">交通方式・約 30 分鐘</p>
+                            <h4 class="font-bold text-lg">中午: 御津八幡宮參拜</h4>
+                            <p class="text-sm text-slate-500">交通與參拜・約 60-75 分鐘</p>
                             <div class="mt-2 text-slate-600">
-                                <p>從【JR大阪站】搭乘JR京都線新快速至【JR京都站】。</p>
+                                <p>午餐後，從南森町站搭地鐵至心齋橋站，步行前往御津八幡宮參拜。</p>
+                                <a href="https://www.google.com/maps/search/?api=1&query=Mitsu+Hachimangu+Shrine" target="_blank" class="text-teal-600 hover:underline">查看地圖</a>
+                            </div>
+                        </div>
+                        <div class="timeline-item relative mb-8 pl-8">
+                            <h4 class="font-bold text-lg">14:00: 前往京都</h4>
+                            <p class="text-sm text-slate-500">交通方式・約 45 分鐘</p>
+                            <div class="mt-2 text-slate-600">
+                                <p>從心齋橋搭地鐵返回梅田，再從【JR大阪站】搭乘JR新快速至【JR京都站】。</p>
                                 <a href="https://www.google.com/maps/dir/Osaka+Station/Kyoto+Station/" target="_blank" class="text-teal-600 hover:underline">規劃路線</a>
                             </div>
                         </div>
                         <div class="timeline-item relative mb-8 pl-8">
-                            <h4 class="font-bold text-lg">14:30: 岡崎神社 (兔子神社)</h4>
+                            <h4 class="font-bold text-lg">15:15: 岡崎神社 (兔子神社)</h4>
                             <p class="text-sm text-slate-500">參拜祈福・約 60 分鐘</p>
                             <div class="mt-2 text-slate-600">
                                 <p>從京都站搭乘市巴士至【岡崎神社前】。尋找可愛的兔子御神籤。</p>
@@ -233,7 +241,7 @@
                             </div>
                         </div>
                         <div class="timeline-item relative mb-8 pl-8">
-                            <h4 class="font-bold text-lg">16:00: 京都岡崎蔦屋書店 & 星巴克</h4>
+                            <h4 class="font-bold text-lg">16:30: 京都岡崎蔦屋書店 & 星巴克</h4>
                             <p class="text-sm text-slate-500">下午茶・約 90 分鐘</p>
                             <div class="mt-2 text-slate-600">
                                 <p>從岡崎神社步行約15分鐘，在充滿書香的特色星巴克享受悠閒時光。</p>
@@ -241,7 +249,7 @@
                             </div>
                         </div>
                          <div class="timeline-item relative mb-8 pl-8">
-                            <h4 class="font-bold text-lg">18:00: 返回大阪</h4>
+                            <h4 class="font-bold text-lg">18:30: 返回大阪</h4>
                             <p class="text-sm text-slate-500">交通方式・約 30 分鐘</p>
                             <div class="mt-2 text-slate-600">
                                 <p>循原路返回大阪，於梅田周邊享用晚餐。</p>
@@ -251,7 +259,7 @@
                 </div>
 
                 <div>
-                    <h3 class="text-2xl font-bold mb-6 text-amber-700">Day 3: 神戶港都美食夜景</h3>
+                    <h3 class="text-2xl font-bold mb-6 text-amber-700">Day 3: 神戶美食與絕美夜景</h3>
                     <div class="relative pl-8">
                         <div class="timeline-line"></div>
                         <div class="timeline-item relative mb-8 pl-8">
@@ -290,13 +298,13 @@
                 </div>
 
                 <div>
-                    <h3 class="text-2xl font-bold mb-6 text-amber-700">Day 4: 古都巡禮二選一</h3>
+                    <h3 class="text-2xl font-bold mb-6 text-amber-700">Day 4: 【關鍵抉擇日】古都巡禮</h3>
                     <div class="bg-teal-50 border-l-4 border-teal-500 text-teal-800 p-4 rounded-r-lg mb-6" role="alert">
                       <p class="font-bold">專業規劃師建議</p>
-                      <p>為維持「輕鬆隨興」的家庭旅遊步調，強烈建議選擇【方案一：奈良深度一日遊】，避免行程過於緊湊勞累。</p>
+                      <p>為維持「輕鬆隨興」的家庭旅遊步調，強烈建議選擇【方案一：奈良一日深度遊】，避免行程過於緊湊勞累。</p>
                     </div>
                     <div class="flex space-x-2 mb-6">
-                        <button id="planA-btn" class="plan-toggle-btn bg-teal-600 text-white px-4 py-2 rounded-lg shadow">推薦方案：奈良深度遊</button>
+                        <button id="planA-btn" class="plan-toggle-btn bg-teal-600 text-white px-4 py-2 rounded-lg shadow">推薦方案：奈良一日深度遊</button>
                         <button id="planB-btn" class="plan-toggle-btn bg-white text-slate-600 px-4 py-2 rounded-lg shadow">備選方案：宇治+奈良精華遊</button>
                     </div>
 
@@ -391,7 +399,7 @@
                 </div>
 
                 <div>
-                    <h3 class="text-2xl font-bold mb-6 text-amber-700">Day 5: 最後巡禮，滿載而歸</h3>
+                    <h3 class="text-2xl font-bold mb-6 text-amber-700">Day 5: 購物與離境</h3>
                     <div class="relative pl-8">
                         <div class="timeline-line"></div>
                         <div class="timeline-item relative mb-8 pl-8">
@@ -404,9 +412,9 @@
                         </div>
                         <div class="timeline-item relative mb-8 pl-8">
                             <h4 class="font-bold text-lg">中午: 前往關西機場 (KIX)</h4>
-                            <p class="text-sm text-slate-500">交通方式・約 60 分鐘</p>
+                            <p class="text-sm text-slate-500">交通方式・約 50-60 分鐘</p>
                             <div class="mt-2 text-slate-600">
-                                <p>搭乘【JR HARUKA】返回機場，便捷又快速。</p>
+                                <p>搭乘【利木津巴士】返回機場，便捷又舒適。</p>
                                 <a href="https://www.google.com/maps/search/?api=1&query=Kansai+International+Airport" target="_blank" class="text-teal-600 hover:underline">機場地圖</a>
                             </div>
                         </div>
@@ -586,7 +594,7 @@
                         yAxisID: 'y'
                     }, {
                         label: '時間 (分鐘)',
-                        data: [58, 45, 65],
+                        data: [55, 45, 65],
                         backgroundColor: 'rgba(245, 158, 11, 0.6)',
                         borderColor: 'rgba(245, 158, 11, 1)',
                         borderWidth: 1,
@@ -621,7 +629,7 @@
             new Chart(totalCostCtx, {
                 type: 'bar',
                 data: {
-                    labels: ['單程票總和 (含機場)', 'JR關西地區周遊券 (4日)'],
+                    labels: ['單程票總和', 'JR關西地區鐵路周遊券 (4日)'],
                     datasets: [{
                         label: '總費用 (日圓)',
                         data: [7610, 7000],
