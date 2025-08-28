@@ -8,7 +8,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Chosen Palette: Warm Neutrals (Stone, Amber, with a Teal accent) -->
     <!-- Application Structure Plan: The application is a single-page app with a fixed top navigation for easy access to five logical sections: Overview, Transport, Daily Itinerary, Food Map, and Preparation. This task-oriented structure, derived from the source reports, allows the family to quickly find relevant information without navigating multiple pages. Key interactions include toggling Day 4 itinerary options and filtering the comprehensive food map, directly addressing the user's request for flexibility and detailed culinary guidance. This design prioritizes usability and efficient information retrieval during the trip. -->
-    <!-- Visualization & Content Choices: Report Info: Airport transport data -> Goal: Compare options -> Viz: Bar Chart (Chart.js) -> Interaction: Hover tooltips -> Justification: Clearly visualizes the trade-offs between cost and time for easy decision-making. Report Info: JR Pass vs. single ticket costs -> Goal: Justify pass purchase -> Viz: Bar Chart (Chart.js) -> Interaction: Hover tooltips -> Justification: Effectively demonstrates the value of the pass beyond just ticket prices by visualizing the cost comparison. Report Info: Daily schedule -> Goal: Provide a clear, step-by-step guide -> Presentation: Vertical Timeline (HTML/Tailwind) -> Interaction: Day 4 plan toggle -> Justification: Offers a scannable, intuitive format for daily plans while providing crucial flexibility. Report Info: Food recommendations across Kansai -> Goal: Easy food discovery -> Presentation: Filterable Card Grid (HTML/JS) -> Interaction: Category filter buttons -> Justification: Fulfills the user's core request by organizing a large number of food options into a manageable, interactive discovery tool. -->
+    <!-- Visualization & Content Choices: Report Info: Airport transport data -> Goal: Compare options -> Viz: Bar Chart (Chart.js) -> Interaction: Hover tooltips -> Justification: Clearly visualizes the trade-offs between cost and time, promoting JR HARUKA for its speed and its seamless connection with the JR Pass. Report Info: JR Pass vs. single ticket costs -> Goal: Justify pass purchase -> Viz: Bar Chart (Chart.js) -> Interaction: Hover tooltips -> Justification: Effectively demonstrates the value of the pass beyond just ticket prices by visualizing the cost comparison. Report Info: Daily schedule -> Goal: Provide a clear, step-by-step guide -> Presentation: Vertical Timeline (HTML/Tailwind) -> Interaction: Day 4 plan toggle -> Justification: Offers a scannable, intuitive format for daily plans while providing crucial flexibility. Report Info: Food recommendations across Kansai -> Goal: Easy food discovery -> Presentation: Filterable Card Grid (HTML/JS) -> Interaction: Category filter buttons -> Justification: Fulfills the user's core request by organizing a large number of food options into a manageable, interactive discovery tool. -->
     <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Noto+Sans+TC:wght@400;500;700&display=swap');
@@ -134,12 +134,12 @@
         <section id="transport" class="mb-16 scroll-mt-20">
             <div class="text-center mb-12">
                 <h2 class="text-3xl font-bold text-teal-800 tracking-tight">交通住宿解析</h2>
-                <p class="mt-3 max-w-3xl mx-auto text-lg text-slate-500">本節將透過數據圖表，為您分析最適合的交通方案，並說明住宿地點的選擇。我們的目標是讓移動成為旅程的享受，而非負擔。</p>
+                <p class="mt-3 max-w-3xl mx-auto text-lg text-slate-500">本節將透過數據圖表，為您分析最適合的交通方案，並說明住宿地點的選擇。考量到時間的寶貴，<span class="font-bold text-teal-700">JR HARUKA</span> 是您抵達後能最快前往市區的絕佳選擇，且與行程中的JR周遊券完美銜接。</p>
             </div>
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
                 <div class="bg-white p-6 rounded-xl shadow-lg">
                     <h3 class="text-xl font-semibold mb-1 text-slate-800">關西機場交通比較</h3>
-                    <p class="text-slate-600 mb-4">考量家庭行李與便利性，<span class="font-bold text-teal-700">利木津巴士</span>是絕佳選擇，可直達飯店免去轉乘煩惱，其價值遠超微小的時間差異。</p>
+                    <p class="text-slate-600 mb-4">JR HARUKA 在時間上具備明顯優勢，能讓您在45分鐘內抵達天王寺或新大阪，是追求效率的最佳選擇。</p>
                     <div class="chart-container">
                         <canvas id="airportTransportChart"></canvas>
                     </div>
@@ -171,9 +171,9 @@
                         <div class="timeline-line"></div>
                         <div class="timeline-item relative mb-8 pl-8">
                             <h4 class="font-bold text-lg">中午: 抵達關西機場 (KIX)</h4>
-                            <p class="text-sm text-slate-500">交通方式・約 60 分鐘</p>
+                            <p class="text-sm text-slate-500">交通方式・約 45 分鐘</p>
                             <div class="mt-2 text-slate-600">
-                                <p>搭乘【利木津巴士】直達梅田住宿地點，輕鬆方便。</p>
+                                <p>搭乘【JR HARUKA】至天王寺或新大阪站，再轉乘地鐵前往梅田住宿地點。</p>
                                 <a href="https://www.google.com/maps/search/?api=1&query=Kansai+International+Airport" target="_blank" class="text-teal-600 hover:underline">查看地圖</a>
                             </div>
                         </div>
@@ -406,7 +406,7 @@
                             <h4 class="font-bold text-lg">中午: 前往關西機場 (KIX)</h4>
                             <p class="text-sm text-slate-500">交通方式・約 60 分鐘</p>
                             <div class="mt-2 text-slate-600">
-                                <p>再次推薦搭乘【利木津巴士】，輕鬆攜帶戰利品直達機場。</p>
+                                <p>搭乘【JR HARUKA】返回機場，便捷又快速。</p>
                                 <a href="https://www.google.com/maps/search/?api=1&query=Kansai+International+Airport" target="_blank" class="text-teal-600 hover:underline">機場地圖</a>
                             </div>
                         </div>
