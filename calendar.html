@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>全年日曆 (可記錄)</title>
+    <style>
+        /* --- 基本樣式 (與前一版相同) --- */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #f8f9fa;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+            color: #444;
+            margin-bottom: 30px;
+        }
+        #calendar-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 25px;
+            max-width: 1500px;
+            margin: 0 auto;
+        }
+        .month {
+            background-color: #ffffff;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            padding: 20px;
+        }
+        .month h2 {
+            text-align: center;
+            margin-top: 0;
+            margin-bottom: 20px;
+            color: #0056b3;
+            font-size: 1.5em;
+        }
+        .days-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 5px;
+        }
+        .grid-cell {
+            text-align: center;
+            padding: 8px 0;
+            font-size: 0.9em;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 32px;
+        }
+        .weekday {
+            font-weight: bold;
+            color: #555;
+            background-color: #f1f3f5;
+            border-radius: 4px;
+        }
+        .empty-day {
+            visibility: hidden;
+        }
+
+        /* --- 新增/修改的樣式 --- */
+
+        /* 可點擊的日期 */
+        .day {
+            cursor: pointer; /* 游標變為手指 */
+            transition: background-color 0.2s, color 0.2s;
+            border-radius: 50%; /* 圓形 */
+        }
+        .day:hover {
+            background-color: #e9ecef;
+        }
+
+        /* "今天" 的樣式 */
+        .today {
+            background-color: #007bff;
+            color: white;
+            font-weight: bold;
+        }
+
+        /* [新] 有資料的日期高亮 */
+        .has-data {
+            background-color: #ffe0b2; /* 淺橘色 */
+            font-weight: bold;
+        }
+        /* 如果"今天"剛好也有資料 */
+        .today.has-data {
+            background-color: #c85000; /* 深橘色 */
+            color: white;
+        }
+
+        /* [新] 彈出式視窗 (Modal) 樣式 */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5); /* 半透明黑幕 */
+            display: none; /* 預設隱藏 */
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background-color: white;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            width: 90%;
+            max-width: 500px;
+        }
+        .modal-content h3 {
+            margin-top: 0;
+        }
+        .modal-content textarea {
+            width: 100%;
+            height: 150px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            padding: 8px;
+            box-sizing: border-box; /* 讓 padding 不會撐爆寬度 */
+        }
+        .modal-buttons {
+            display: flex;
+            justify-content: space-between; /* 按鈕分開 */
+        }
+        .modal-buttons button {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        #save-button {
+            background-color: #007bff;
+            color: white;
+        }
+        #delete-button {
+            background-color: #dc3545;
+            color: white;
+        }
+        #close-button {
+            background-color: #6c757d;
+            color: white;
+        }
+
+        /* --- 響應式設計 (與前一版相同) --- */
+        @media (max-width: 1200px) {
+            #calendar-container {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        @media (max-width: 768px) {
+            #calendar-container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <h1>
+        <span id="year-display"></span> 年日曆
+        <small style="display: block; font-size: 0.5em; color: #555;">(點擊日期以新增/編輯紀錄)</small>
+    </h1>
+
+    <div id="calendar-container">
+        </div>
+
+    <div class="modal-overlay" id="record-modal">
+        <div class="modal-content">
+            <h3 id="modal-title">編輯紀錄</h3>
+            <textarea id="record-text" placeholder="請在此輸入您的紀錄..."></textarea>
+            <div class="modal-buttons">
+                <div>
+                    <button id="save-button">儲存</button>
+                    <button id="delete-button">刪除</button>
+                </div>
+                <button id="close-button">關閉</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // --- 全域變數和 DOM 元素 ---
+            const calendarContainer = document.getElementById('calendar-container');
+            const yearDisplay = document.getElementById('year-display');
+            const modal = document.getElementById('record-modal');
+            const modalTitle = document.getElementById('modal-title');
+            const recordText = document.getElementById('record-text');
+            const saveButton = document.getElementById('save-button');
+            const deleteButton = document.getElementById('delete-button');
+            const closeButton = document.getElementById('close-button');
+
+            const today = new Date();
+            const currentYear = today.getFullYear();
+            const currentMonth = today.getMonth(); // 0-11
+            const currentDay = today.getDate();
+
+            const monthNames = ['一月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '十一月', '十二月'];
+            const weekDayNames = ['日', '一', '二', '三', '四', '五', '六'];
+
+            // 用於儲存所有日曆資料的物件，鍵名為 'YYYY-M-D'
+            let calendarData = {};
+            // 用於儲存目前正在編輯的日期鍵名
+            let currentEditingKey = null;
+
+            // --- [新] 資料處理函式 ---
+
+            /**
+             * 從 localStorage 載入資料到 calendarData 物件
+             */
+            function loadCalendarData() {
+                const data = localStorage.getItem('myCalendarData');
+                if (data) {
+                    calendarData = JSON.parse(data);
+                }
+            }
+
+            /**
+             * 將 calendarData 物件存儲(JSON格式)到 localStorage
+             */
+            function saveCalendarData() {
+                localStorage.setItem('myCalendarData', JSON.stringify(calendarData));
+            }
+
+            // --- [新] Modal (彈出視窗) 相關函式 ---
+
+            /**
+             * 打開彈出視窗
+             * @param {string} dateKey - 日期鍵名，格式 'YYYY-M-D'
+             */
+            function openModal(dateKey) {
+                currentEditingKey = dateKey;
+                
+                // 格式化標題 (例如: 2025-9-15 -> 2025年 10月 15日)
+                const [year, month, day] = dateKey.split('-');
+                modalTitle.textContent = `${year}年 ${monthNames[parseInt(month)]} ${day}日`;
+                
+                // 載入該日期的現有資料，如果沒有則為空字串
+                recordText.value = calendarData[dateKey] || '';
+                
+                modal.style.display = 'flex';
+            }
+
+            /**
+             * 關閉彈出視窗
+             */
+            function closeModal() {
+                modal.style.display = 'none';
+                currentEditingKey = null;
+                recordText.value = '';
+            }
+
+            /**
+             * 處理儲存按鈕點擊
+             */
+            function handleSave() {
+                const data = recordText.value;
+                if (!currentEditingKey) return;
+
+                if (data.trim()) {
+                    // 如果有資料，則儲存
+                    calendarData[currentEditingKey] = data;
+                } else {
+                    // 如果資料被清空，則視為刪除
+                    delete calendarData[currentEditingKey];
+                }
+
+                saveCalendarData();
+                renderFullCalendar(); // 重新渲染日曆以更新高亮
+                closeModal();
+            }
+
+            /**
+             * 處理刪除按鈕點擊
+             */
+            function handleDelete() {
+                if (!currentEditingKey) return;
+
+                if (calendarData[currentEditingKey]) {
+                    delete calendarData[currentEditingKey];
+                    saveCalendarData();
+                    renderFullCalendar(); // 重新渲染日曆以更新高亮
+                }
+                closeModal();
+            }
+
+            // --- 日曆生成函式 (已修改) ---
+
+            /**
+             * 生成指定年份和月份的日曆
+             * @param {number} year - 年份
+             * @param {number} month - 月份 (0-11)
+             * @returns {HTMLElement} - 月曆的 div 元素
+             */
+            function generateMonth(year, month) {
+                const monthDiv = document.createElement('div');
+                monthDiv.className = 'month';
+                
+                const title = document.createElement('h2');
+                title.textContent = monthNames[month];
+                monthDiv.appendChild(title);
+                
+                const grid = document.createElement('div');
+                grid.className = 'days-grid';
+
+                // 填入星期標頭
+                weekDayNames.forEach(day => {
+                    const weekdayCell = document.createElement('div');
+                    weekdayCell.className = 'grid-cell weekday';
+                    weekdayCell.textContent = day;
+                    grid.appendChild(weekdayCell);
+                });
+
+                const firstDay = new Date(year, month, 1);
+                const firstDayWeekday = firstDay.getDay(); 
+                const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+                // 填入空白格
+                for (let i = 0; i < firstDayWeekday; i++) {
+                    const emptyCell = document.createElement('div');
+                    emptyCell.className = 'grid-cell empty-day';
+                    grid.appendChild(emptyCell);
+                }
+
+                // 填入日期
+                for (let day = 1; day <= daysInMonth; day++) {
+                    const dayCell = document.createElement('div');
+                    dayCell.className = 'grid-cell day';
+                    dayCell.textContent = day;
+
+                    // [修改] 建立唯一的日期鍵名
+                    const dateKey = `${year}-${month}-${day}`;
+
+                    // [修改] 檢查是否為 "今天"
+                    if (year === currentYear && month === currentMonth && day === currentDay) {
+                        dayCell.classList.add('today');
+                    }
+
+                    // [新] 檢查這天是否有資料
+                    if (calendarData[dateKey]) {
+                        dayCell.classList.add('has-data');
+                    }
+
+                    // [新] 幫日期格子加上點擊事件
+                    dayCell.addEventListener('click', () => {
+                        openModal(dateKey);
+                    });
+                    
+                    grid.appendChild(dayCell);
+                }
+
+                monthDiv.appendChild(grid);
+                return monthDiv;
+            }
+
+            /**
+             * [新] 渲染整年的日曆
+             * (此函式用於初始化和更新)
+             */
+            function renderFullCalendar() {
+                // 清空現有日曆
+                calendarContainer.innerHTML = '';
+                
+                // 循環 12 次，生成 12 個月份的日曆
+                for (let m = 0; m < 12; m++) {
+                    const monthCalendar = generateMonth(currentYear, m);
+                    calendarContainer.appendChild(monthCalendar);
+                }
+            }
+
+
+            // --- 程式進入點 (主程式) ---
+
+            // 1. 設定標題年份
+            yearDisplay.textContent = currentYear;
+
+            // 2. 幫 modal 上的按鈕綁定事件
+            saveButton.addEventListener('click', handleSave);
+            deleteButton.addEventListener('click', handleDelete);
+            closeButton.addEventListener('click', closeModal);
+            // 點擊半透明黑幕也會關閉視窗
+            modal.addEventListener('click', (event) => {
+                if (event.target === modal) {
+                    closeModal();
+                }
+            });
+
+            // 3. 載入儲存的資料
+            loadCalendarData();
+            
+            // 4. 渲染完整日曆
+            renderFullCalendar();
+
+        });
+    </script>
+
+</body>
+</html>
