@@ -1,0 +1,343 @@
+<html lang="zh-TW"><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>動態每日習慣追蹤器</title>
+    
+    <style>
+        /* 佈局和樣式 */
+        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f7f6; color: #333; }
+        .container { max-width: 1200px; margin: 0 auto; background-color: #fff; padding: 20px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); }
+        .tracker-header { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #ccc; padding-bottom: 10px; }
+        .tracker-header h1 { color: #4CAF50; margin-bottom: 5px; }
+        .user-input-group { display: flex; align-items: center; justify-content: center; margin-bottom: 15px; padding: 10px; background-color: #f0f0f0; border-radius: 5px; }
+        .user-input-group label { font-weight: bold; margin-right: 10px; }
+        .user-input-group input[type="text"] { padding: 5px 10px; border: 1px solid #ccc; border-radius: 3px; font-size: 16px; width: 200px; }
+        .controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .controls button { padding: 8px 15px; background-color: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 14px; margin-left: 10px; transition: background-color 0.2s; }
+        .controls button:hover { background-color: #0056b3; }
+        .save-button { background-color: #ff9800 !important; }
+        .save-button:hover { background-color: #e68a00 !important; }
+        .habit-tracker { overflow-x: auto; }
+        .habit-tracker table { width: 100%; border-collapse: collapse; table-layout: fixed; min-width: 800px; }
+        .habit-tracker th, .habit-tracker td { border: 1px solid #ddd; padding: 5px 2px; text-align: center; height: 30px; }
+        .habit-name-header, .habit-name { width: 180px; min-width: 180px; text-align: left; padding-left: 10px; background-color: #e9f7e9; font-weight: bold; }
+        .date-header th { width: calc((100% - 180px) / 32); font-size: 0.8em; background-color: #4CAF50; color: white; padding: 5px 0; }
+        .track-cell { background-color: #fff; cursor: pointer; user-select: none; position: relative; }
+        
+        /* 追蹤標記的 CSS 樣式：處理 Class (即時點擊) 和 data-tracked 屬性 (檔案載入) */
+        .tracked::after,
+        [data-tracked="true"]::after { 
+            content: '•';
+            display: block;
+            font-size: 20px;
+            line-height: 1;
+            color: #4CAF50;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        
+        .delete-col { width: 40px; min-width: 40px; background-color: #f9f9f9; }
+        .delete-btn { background: none; border: none; color: red; font-weight: bold; cursor: pointer; font-size: 1.2em; }
+        .notes { margin-top: 30px; padding-top: 20px; border-top: 2px solid #ccc; }
+        .notes textarea { width: 100%; min-height: 100px; border: 1px solid #ddd; padding: 10px; box-sizing: border-box; resize: vertical; }
+
+        /* 列印樣式 (不變) */
+        @media print {
+            .controls, .print-info, .user-input-group { display: none; }
+            body { margin: 0; padding: 0; background-color: white; color: black; }
+            .container { box-shadow: none; padding: 0; }
+            .habit-tracker th, .habit-tracker td { border-color: #000; padding: 4px 2px; height: 20px; }
+            .habit-name-header, .habit-tracker th:not(:last-child), .delete-col { background-color: #fff !important; color: #000 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .delete-col, .delete-btn { display: none !important; }
+            .habit-tracker table { width: 100%; min-width: unset; }
+            .tracked::after, [data-tracked="true"]::after { content: '✔' !important; font-size: 14px; color: black !important; }
+            .date-header th { width: calc(100% / 31); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header class="tracker-header">
+            <h1>每日習慣追蹤</h1>
+            <h2 id="month-year-display">2025年十月</h2>
+        </header>
+        
+        <div class="user-input-group">
+            <label for="userName">追蹤者名稱:</label>
+            <input type="text" id="userName" placeholder="請輸入您的名字" value="每日項目">
+        </div>
+
+        <div class="controls">
+            <div>
+                <button onclick="changeMonth(-1)">上個月</button>
+                <button onclick="changeMonth(1)">下個月</button>
+            </div>
+            <div>
+                <button onclick="addHabitRow()">新增習慣欄位</button>
+                <button onclick="saveAsHtmlFile()" class="save-button">儲存追蹤表</button>
+                <button onclick="window.print()" class="print-button">列印此月</button>
+            </div>
+        </div>
+        
+        <p class="print-info">
+            <span style="color:red;">注意：如果下載資料夾中已存在同名檔案，瀏覽器會在檔名後自動增加編號，無法強制覆蓋。</span>
+            點擊表格格子可追蹤，點擊最右側的「X」可刪除習慣。
+        </p>
+
+        <div class="habit-tracker">
+            <table id="habit-table">
+                <thead>
+                    <tr>
+                        <th class="habit-name-header">習慣名稱</th>
+                        <th colspan="31" id="days-colspan">日期</th>
+                        <th class="delete-col"></th>
+                    </tr>
+                    <tr id="date-row" class="date-header"><td class="habit-name-placeholder"></td><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th><th>7</th><th>8</th><th>9</th><th>10</th><th>11</th><th>12</th><th>13</th><th>14</th><th>15</th><th>16</th><th>17</th><th>18</th><th>19</th><th>20</th><th>21</th><th>22</th><th>23</th><th>24</th><th>25</th><th>26</th><th>27</th><th>28</th><th>29</th><th>30</th><th>31</th><th class="delete-col"></th></tr>
+                </thead>
+                <tbody><tr><td class="habit-name" data-saved-name="早睡" contenteditable="true">早睡</td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="delete-col"><button class="delete-btn" title="刪除此習慣">X</button></td></tr><tr><td class="habit-name" data-saved-name="睡眠充足" contenteditable="true">睡眠充足</td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="delete-col"><button class="delete-btn" title="刪除此習慣">X</button></td></tr><tr><td class="habit-name" data-saved-name="運動(跑步)" contenteditable="true">運動(跑步)</td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="delete-col"><button class="delete-btn" title="刪除此習慣">X</button></td></tr><tr><td class="habit-name" data-saved-name="運動(肌力)" contenteditable="true">運動(肌力)</td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="delete-col"><button class="delete-btn" title="刪除此習慣">X</button></td></tr><tr><td class="habit-name" data-saved-name="澆花" contenteditable="true">澆花</td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="delete-col"><button class="delete-btn" title="刪除此習慣">X</button></td></tr><tr><td class="habit-name" data-saved-name="倒垃圾" contenteditable="true">倒垃圾</td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="delete-col"><button class="delete-btn" title="刪除此習慣">X</button></td></tr><tr><td class="habit-name" data-saved-name="剪指甲" contenteditable="true">剪指甲</td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="delete-col"><button class="delete-btn" title="刪除此習慣">X</button></td></tr><tr><td class="habit-name" data-saved-name="剪頭髮" contenteditable="true">剪頭髮</td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell tracked" data-tracked="true"></td><td class="track-cell"></td><td class="track-cell"></td><td class="track-cell"></td><td class="delete-col"><button class="delete-btn" title="刪除此習慣">X</button></td></tr></tbody>
+            </table>
+        </div>
+    </div>
+
+    <footer class="notes">
+        <h3>備註/總結</h3>
+        <textarea id="notes-area" placeholder="在此輸入本月習慣追蹤的備註或總結" value=""></textarea>
+    </footer>
+
+    <script>
+        // -----------------------------------------------------
+        // 1. 全局變數和初始化
+        // -----------------------------------------------------
+        let currentDate = new Date();
+        const habitTable = document.getElementById('habit-table'); 
+        const tableBody = document.querySelector('#habit-table tbody');
+        const dateRow = document.getElementById('date-row');
+        const monthYearDisplay = document.getElementById('month-year-display');
+        const daysColspan = document.getElementById('days-colspan');
+        const userNameInput = document.getElementById('userName'); 
+        const notesArea = document.getElementById('notes-area'); 
+        const INITIAL_HABITS = ["喝水 8 杯", "運動 30 分鐘", "閱讀 10 頁"];
+
+        // -----------------------------------------------------
+        // 2. 核心功能：生成表格
+        // -----------------------------------------------------
+
+        function renderCalendar() {
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth(); 
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            
+            const monthNames = ["一", "二", "三", "四", "五", "六", "七", "八", "九", "十", "十一", "十二"];
+            monthYearDisplay.textContent = `${year}年${monthNames[month]}月`;
+            
+            daysColspan.colSpan = daysInMonth; 
+
+            // 清空日期欄
+            dateRow.innerHTML = `<td class="habit-name-placeholder"></td>`; 
+
+            for (let i = 1; i <= daysInMonth; i++) {
+                const th = document.createElement('th');
+                th.textContent = i;
+                dateRow.appendChild(th);
+            }
+            
+            const deleteHeader = document.createElement('th');
+            deleteHeader.className = 'delete-col';
+            dateRow.appendChild(deleteHeader);
+        }
+
+        function createTrackCell() {
+            const cell = document.createElement('td');
+            cell.className = 'track-cell';
+            // 透過事件委託處理點擊
+            return cell;
+        }
+
+        function createHabitNameCell(name) {
+            const cell = document.createElement('td');
+            cell.className = 'habit-name';
+            cell.setAttribute('data-saved-name', name); 
+            cell.textContent = name;
+            cell.contentEditable = 'true'; 
+            return cell;
+        }
+        
+        function createDeleteCell() {
+            const cell = document.createElement('td');
+            cell.className = 'delete-col';
+            const button = document.createElement('button');
+            button.className = 'delete-btn';
+            button.textContent = 'X';
+            button.title = '刪除此習慣';
+            // 透過事件委託處理點擊
+            cell.appendChild(button);
+            return cell;
+        }
+
+        // -----------------------------------------------------
+        // 3. 事件委託處理器 (核心)
+        // -----------------------------------------------------
+        
+        function setupTableEvents() {
+            // 在整個表格上設置單一監聽器，處理點擊事件
+            habitTable.addEventListener('click', function(event) {
+                const target = event.target;
+
+                // 處理追蹤格子點擊
+                if (target.classList.contains('track-cell')) {
+                    // 點擊時，同時切換 class 和 data-tracked 屬性
+                    target.classList.toggle('tracked');
+                    if (target.classList.contains('tracked')) {
+                        target.setAttribute('data-tracked', 'true');
+                    } else {
+                        target.removeAttribute('data-tracked');
+                    }
+                }
+
+                // 處理刪除按鈕點擊
+                if (target.classList.contains('delete-btn')) {
+                    const row = target.closest('tr');
+                    if (row && confirm("確定要刪除這個習慣項目嗎？")) {
+                        row.remove();
+                    }
+                }
+            });
+            
+            // 處理 Habit Name 的 contenteditable 輸入，確保即時更新 data-saved-name
+            habitTable.addEventListener('input', function(event) {
+                 const target = event.target;
+                 if (target.classList.contains('habit-name')) {
+                    // 即時將使用者輸入的值更新到屬性中
+                    target.setAttribute('data-saved-name', target.textContent.trim());
+                 }
+            });
+            
+             // 處理備註區塊輸入
+            notesArea.addEventListener('input', function() {
+                // 即時將使用者輸入的值更新到屬性中
+                notesArea.setAttribute('value', notesArea.value);
+            });
+        }
+        
+        // -----------------------------------------------------
+        // 4. 新增/刪除/切換月份功能
+        // -----------------------------------------------------
+
+        function addHabitRow(name = "新的習慣項目") {
+            const row = document.createElement('tr');
+            
+            row.appendChild(createHabitNameCell(name));
+            
+            const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
+            for (let i = 0; i < daysInMonth; i++) {
+                row.appendChild(createTrackCell());
+            }
+
+            row.appendChild(createDeleteCell());
+            
+            tableBody.appendChild(row);
+        }
+        
+        function changeMonth(delta) {
+            currentDate.setMonth(currentDate.getMonth() + delta);
+            tableBody.innerHTML = ''; 
+            renderCalendar(); 
+            // 切換月份後，顯示初始習慣
+            INITIAL_HABITS.forEach(name => addHabitRow(name));
+        }
+
+        // -----------------------------------------------------
+        // 5. 載入儲存內容功能
+        // -----------------------------------------------------
+        
+        function loadSavedData() {
+            // 1. 恢復習慣名稱 (contentEditable 內容)
+            document.querySelectorAll('.habit-name').forEach(cell => {
+                const savedName = cell.getAttribute('data-saved-name');
+                if (savedName) {
+                    cell.textContent = savedName;
+                }
+                // 確保 contentEditable 屬性存在
+                cell.contentEditable = 'true'; 
+            });
+            
+            // 2. 恢復追蹤狀態 (data-tracked 屬性)
+            document.querySelectorAll('.track-cell[data-tracked="true"]').forEach(cell => {
+                // 確保 class 存在，與 data-attribute 保持同步
+                if (!cell.classList.contains('tracked')) {
+                    cell.classList.add('tracked');
+                }
+            });
+        }
+
+        // -----------------------------------------------------
+        // 6. 儲存功能 
+        // -----------------------------------------------------
+
+        function saveAsHtmlFile() {
+            // 獲取使用者名稱
+            const userName = userNameInput.value.trim();
+            if (!userName) {
+                alert("請先輸入您的追蹤者名稱！");
+                userNameInput.focus();
+                return;
+            }
+            
+            // 步驟 1：將所有動態內容的即時值寫回 DOM 的屬性中
+            userNameInput.setAttribute('value', userName);
+            notesArea.setAttribute('value', notesArea.value);
+            
+            document.querySelectorAll('.habit-name').forEach(cell => {
+                cell.setAttribute('data-saved-name', cell.textContent.trim());
+            });
+
+            // 步驟 2：生成檔案名稱和內容
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth() + 1;
+            const formattedMonth = String(month).padStart(2, '0');
+            const filename = `${userName}_${year}年${formattedMonth}月_習慣追蹤.html`;
+            
+            const htmlContent = document.documentElement.outerHTML;
+
+            // 步驟 3：觸發下載
+            const blob = new Blob([htmlContent], { type: 'text/html' });
+            const link = document.createElement('a');
+            
+            link.href = URL.createObjectURL(blob);
+            link.download = filename;
+            
+            document.body.appendChild(link);
+            link.click();
+            
+            // 清理
+            document.body.removeChild(link);
+            URL.revokeObjectURL(link.href);
+            
+            alert(`追蹤表已儲存為檔案：\n${filename}\n\n請用瀏覽器開啟此檔案以繼續追蹤。`);
+        }
+
+        // -----------------------------------------------------
+        // 7. 初始化
+        // -----------------------------------------------------
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            // 設置事件委託
+            setupTableEvents(); 
+            
+            renderCalendar(); 
+            
+            if (tableBody.children.length > 0) {
+                // 如果是從已儲存的檔案開啟，則載入儲存的資料
+                loadSavedData();
+            } else {
+                // 如果是第一次開啟，則新增初始習慣行
+                INITIAL_HABITS.forEach(name => addHabitRow(name));
+            }
+        });
+
+    </script>
+
+</body></html>
